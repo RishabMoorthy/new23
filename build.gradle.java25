@@ -1,0 +1,112 @@
+plugins {
+    id 'groovy'
+    id 'java'
+    id 'application'
+}
+
+group = 'org.framework'
+version = '1.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+application {
+    mainClass = 'org.framework.Main'
+}
+
+dependencies {
+    // Groovy (4.0.33 = supports Java 25)
+    implementation 'org.apache.groovy:groovy:4.0.33'
+    implementation 'org.apache.groovy:groovy-all:4.0.33'
+    implementation 'org.apache.groovy:groovy-xml:4.0.33'
+    implementation 'org.apache.groovy:groovy-json:4.0.33'
+    implementation 'org.apache.groovy:groovy-sql:4.0.33'
+    implementation 'org.apache.groovy:groovy-dateutil:4.0.33'
+    implementation 'org.apache.groovy:groovy-datetime:4.0.33'
+
+    // SOAP / WSDL
+    implementation 'wsdl4j:wsdl4j:1.6.3'
+    implementation 'io.github.librewsdl4j:libre-wsdl4j:1.12.0'
+
+    // JSON
+    implementation 'org.json:json:20230227'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.jayway.jsonpath:json-path:2.9.0'
+    implementation 'net.minidev:json-smart:2.4.8'
+    implementation 'org.codehaus.jackson:jackson-core-asl:1.9.13'
+    implementation 'org.codehaus.jackson:jackson-mapper-asl:1.9.13'
+
+    // Database
+    implementation 'com.microsoft.sqlserver:mssql-jdbc:9.4.1.jre11'
+    implementation 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
+    implementation 'org.flywaydb:flyway-core:10.22.0'
+    implementation 'org.flywaydb:flyway-sqlserver:10.22.0'
+    implementation 'com.zaxxer:HikariCP:4.0.3'
+    implementation 'org.apache.derby:derby:10.17.1.0'
+    implementation 'org.apache.derby:derbytools:10.17.1.0'
+    implementation 'org.hibernate.orm:hibernate-core:6.6.59.Final'
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+
+    // Server / network
+    implementation 'org.apache.mina:mina-core:2.1.15'
+    implementation 'org.eclipse.jetty:jetty-server:11.0.26'
+    implementation 'org.eclipse.jetty:jetty-servlet:11.0.26'
+
+    // Utilities
+    implementation 'commons-lang:commons-lang:2.6'
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation 'org.apache.logging.log4j:log4j-api:2.23.1'
+    implementation 'org.apache.poi:poi-ooxml:5.5.1'
+    implementation 'com.sun.mail:jakarta.mail:2.0.2'
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.9'
+
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // Custom jars (hibernate-1.0-SNAPSHOT.jar, StubEngineUtil.jar, ...)
+    implementation fileTree(dir: 'customJar', include: ['*.jar'])
+
+    // Tests
+    testImplementation platform('org.junit:junit-bom:5.14.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.mockito:mockito-core:5.25.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.25.0'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.register('printCompileClasspath') {
+    doLast {
+        configurations.compileClasspath.files.each {
+            println it.absolutePath
+        }
+    }
+}
+
+tasks.register('copyDependencies', Copy) {
+    from configurations.runtimeClasspath
+    into layout.buildDirectory.dir('lib')
+}
+
+jar {
+    dependsOn 'copyDependencies'
+    manifest {
+        attributes(
+                'Main-Class': application.mainClass.get(),
+                'Class-Path': configurations.runtimeClasspath.collect { "../lib/${it.name}" }.join(' ')
+        )
+    }
+}
